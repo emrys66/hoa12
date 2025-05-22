@@ -1,13 +1,14 @@
 ---
-- name: Full sytem setup and patching
+- name: Full system setup and patching
   hosts: all
   become: yes
   tasks:
 
     - name: Perform full patching
-      packages:
+      package:
         name: '*'
         state: latest
+
     - name: Add admin group
       group:
         name: admin
@@ -25,7 +26,7 @@
     - name: Add SSH public key for user
       authorized_key:
         user: admin
-        key: "{{ lookup('file', "~/.ssh/id.rsa.pub') }}
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
         state: present
 
     - name: Add sudoer rule for local user
