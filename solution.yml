@@ -1,0 +1,84 @@
+---
+- name: Security Solution
+  hosts: all
+  become: true
+  vars:
+    created_username: devopsadmin
+    ssh_public_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+    packages:
+      - ufw
+      - fail2ban
+      - unattended-upgrades
+  tasks:
+
+    - name: Update and upgrade APT packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install essential security packages
+      apt:
+        name: "{{ packages }}"
+        state: present
+
+    - name: Create a new sudo user
+      user:
+        name: "{{ created_username }}"
+        groups: sudo
+        append: yes
+        create_home: yes
+        shell: /bin/bash
+
+    - name: Set up SSH key for the new user
+      authorized_key:
+        user: "{{ created_username }}"
+        state: present
+        key: "{{ ssh_public_key }}"
+
+    - name: Disable root SSH login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: 'PermitRootLogin no'
+        validate: '/usr/sbin/sshd -t'
+
+    - name: Enforce passwordless sudo for sudo group
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^%sudo'
+        line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+        validate: '/usr/sbin/visudo -cf %s'
+
+    - name: Configure UFW to allow SSH
+      ufw:
+        rule: allow
+        name: OpenSSH
+
+    - name: Enable UFW with default deny policy
+      ufw:
+        state: enabled
+        policy: deny
+
+    - name: Configure Fail2Ban with default settings
+      copy:
+        src: /etc/fail2ban/jail.conf
+        dest: /etc/fail2ban/jail.local
+        remote_src: yes
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart Fail2Ban
+
+    - name: Enable unattended upgrades
+      copy:
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        content: |
+          APT::Periodic::Update-Package-Lists "1";
+          APT::Periodic::Unattended-Upgrade "1";
+
+  handlers:
+    - name: Restart Fail2Ban
+      service:
+        name: fail2ban
+        state: restarted
