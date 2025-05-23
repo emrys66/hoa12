@@ -26,3 +26,23 @@
       vars:
         source_ip: 192.168.0.10
         destination_ip: 192.168.0.11
+- name: Simulate managing firewall rules
+  hosts: checkpoint
+  connection: local
+  gather_facts: no
+
+  vars:
+    block_source_ip: 10.10.10.10
+    block_destination_ip: 192.168.1.1
+    unblock_source_ip: 192.168.0.15
+    unblock_destination_ip: 192.168.0.100
+
+  tasks:
+    - name: Simulate blocking an IP
+      debug:
+        msg: "Simulating block: {{ block_source_ip }} -> {{ block_destination_ip }}"
+
+    - name: Simulate unblocking an IP
+      debug:
+        msg: "Simulating unblock: {{ unblock_source_ip }} -> {{ unblock_destination_ip }}"
+
