@@ -1,0 +1,28 @@
+---
+- name: Block a source IP address using Check Point
+  hosts: checkpoint
+  connection: httpapi
+  gather_facts: no
+
+  tasks:
+    - name: Block source IP using acl_manager role
+      include_role:
+        name: ansible_security.acl_manager
+        tasks_from: block_ip
+      vars:
+        source_ip: 172.17.13.98
+        destination_ip: 192.168.0.10
+
+- name: Unblock a source IP address using Check Point
+  hosts: checkpoint
+  connection: httpapi
+  gather_facts: no
+
+  tasks:
+    - name: Unblock source IP using acl_manager role
+      include_role:
+        name: ansible_security.acl_manager
+        tasks_from: unblock_ip
+      vars:
+        source_ip: 192.168.0.10
+        destination_ip: 192.168.0.11
